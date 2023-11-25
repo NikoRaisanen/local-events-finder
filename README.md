@@ -1,0 +1,1 @@
+Project to find events happening in a given city and time frame.
