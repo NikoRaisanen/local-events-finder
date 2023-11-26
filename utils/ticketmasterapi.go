@@ -4,31 +4,41 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 type EventsResponse struct {
 	Embedded struct {
 		Events []Event `json:"events"`
 	} `json:"_embedded"`
+	PageInfo PageInfo `json:"page"`
+}
+
+type PageInfo struct {
+	Size          int `json:"size"`
+	TotalElements int `json:"totalElements"`
+	TotalPages    int `json:"totalPages"`
+	Number        int `json:"number"`
 }
 
 type Event struct {
-	Name   string   `json:"name"`
-	Type   string   `json:"type"`
-	ID     string   `json:"id"`
-	URL    string   `json:"url"`
-	Images []Image  `json:"images"`
-	Dates  DateInfo `json:"dates"`
+	Name string `json:"name"`
+	Type string `json:"type"`
+	ID   string `json:"id"`
+	URL  string `json:"url"`
+	// Images []Image  `json:"images"`
+	Dates DateInfo `json:"dates"`
 }
 
-type Image struct {
-	Ratio    string `json:"ratio"`
-	Url      string `json:"url"`
-	Width    int    `json:"width"`
-	Height   int    `json:"height"`
-	Fallback bool   `json:"fallback"`
-}
+// type Image struct {
+// 	Ratio    string `json:"ratio"`
+// 	Url      string `json:"url"`
+// 	Width    int    `json:"width"`
+// 	Height   int    `json:"height"`
+// 	Fallback bool   `json:"fallback"`
+// }
 
 type DateInfo struct {
 	Start            StartInfo `json:"start"`
@@ -40,7 +50,11 @@ type StartInfo struct {
 }
 
 func GetEvents(apiKey string) ([]Event, error) {
-	var eventsUrl string = fmt.Sprintf("https://app.ticketmaster.com/discovery/v2/events.json?countryCode=US&apikey=%s", apiKey)
+	// TODO: Take query params as args
+
+	timeNow := time.Now().Format("2006-01-02T15:04:05Z")
+	endTime := time.Now().AddDate(0, 2, 0).Format("2006-01-02T15:04:05Z")
+	var eventsUrl string = fmt.Sprintf("https://app.ticketmaster.com/discovery/v2/events.json?postalCode=89501&startDateTime=%s&endDateTime=%s&page=0&size=20&apikey=%s", timeNow, endTime, apiKey)
 	req, err := http.NewRequest("GET", eventsUrl, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Error creating new req object %w", err)
@@ -54,19 +68,19 @@ func GetEvents(apiKey string) ([]Event, error) {
 	defer resp.Body.Close()
 
 	// read response
-	body, _ := io.ReadAll(resp.Body)
-	// err = ioutil.WriteFile("./events.json", body, 0644)
-	// if err != nil {
-	// 	log.Fatalf("Error writing to file %w", err)
-	// }
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Errorf("Error reading response body %w", err)
+	}
+	fmt.Printf("Response body: %s", body)
+	err = ioutil.WriteFile("./tmp.json", body, 0644)
 	var response EventsResponse
 	err = json.Unmarshal(body, &response)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling JSON: %w", err)
 	}
 
-	// eventsJson, _ := json.Marshal(response.Embedded.Events)
-	// err = ioutil.WriteFile("./response.json", eventsJson, 0644)
+	err = ioutil.WriteFile("./response.json", body, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("Error writing to file %w", err)
 	}
