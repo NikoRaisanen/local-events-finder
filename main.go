@@ -14,6 +14,7 @@ import (
 	"localevents/utils"
 	"log"
 	"os"
+	"time"
 )
 
 type Secret struct {
@@ -54,7 +55,10 @@ func main() {
 		log.Fatalf("Error occured fetching secrets %s", err)
 	}
 
-	resp, err := utils.GetEvents(ticketMasterSecret.Key)
+	timeNow := time.Now().Format("2006-01-02T15:04:05Z")
+	endTime := time.Now().AddDate(0, 2, 0).Format("2006-01-02T15:04:05Z")
+	postalCode := "89501"
+	resp, err := utils.GetEvents(ticketMasterSecret.Key, postalCode, timeNow, endTime)
 	// fmt.Printf("Response from GetEvents: %v", resp)
 	fmt.Printf("Number of events: %d", len(resp))
 	summarizeEvents(resp)

@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"time"
 )
 
 type EventsResponse struct {
@@ -49,12 +48,9 @@ type StartInfo struct {
 	DateTime string `json:"dateTime"`
 }
 
-func GetEvents(apiKey string) ([]Event, error) {
-	// TODO: Take query params as args
-
-	timeNow := time.Now().Format("2006-01-02T15:04:05Z")
-	endTime := time.Now().AddDate(0, 2, 0).Format("2006-01-02T15:04:05Z")
-	var eventsUrl string = fmt.Sprintf("https://app.ticketmaster.com/discovery/v2/events.json?postalCode=89501&startDateTime=%s&endDateTime=%s&page=0&size=20&apikey=%s", timeNow, endTime, apiKey)
+func GetEvents(apiKey string, postalCode string, startTime string, endTime string) ([]Event, error) {
+	// var allEvents []Event
+	var eventsUrl string = fmt.Sprintf("https://app.ticketmaster.com/discovery/v2/events.json?postalCode=%s&startDateTime=%s&endDateTime=%s&page=0&size=20&apikey=%s", postalCode, startTime, endTime, apiKey)
 	req, err := http.NewRequest("GET", eventsUrl, nil)
 	if err != nil {
 		return nil, fmt.Errorf("Error creating new req object %w", err)
