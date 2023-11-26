@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -39,6 +38,7 @@ type Event struct {
 // 	Fallback bool   `json:"fallback"`
 // }
 
+// Times are in UTC
 type DateInfo struct {
 	Start            StartInfo `json:"start"`
 	SpanMultipleDays bool      `json:"spanMultipleDays"`
@@ -49,36 +49,42 @@ type StartInfo struct {
 }
 
 func GetEvents(apiKey string, postalCode string, startTime string, endTime string) ([]Event, error) {
-	// var allEvents []Event
-	var eventsUrl string = fmt.Sprintf("https://app.ticketmaster.com/discovery/v2/events.json?postalCode=%s&startDateTime=%s&endDateTime=%s&page=0&size=20&apikey=%s", postalCode, startTime, endTime, apiKey)
-	req, err := http.NewRequest("GET", eventsUrl, nil)
-	if err != nil {
-		return nil, fmt.Errorf("Error creating new req object %w", err)
+	var allEvents []Event
+	var page int = 0
+
+	for {
+		eventsUrl := fmt.Sprintf("https://app.ticketmaster.com/discovery/v2/events.json?postalCode=%s&startDateTime=%s&endDateTime=%s&page=%d&size=20&apikey=%s", postalCode, startTime, endTime, page, apiKey)
+		req, err := http.NewRequest("GET", eventsUrl, nil)
+		if err != nil {
+			return nil, fmt.Errorf("error creating new request object: %w", err)
+		}
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("error with API call: %w", err)
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("error reading response body: %w", err)
+		}
+
+		var response EventsResponse
+		err = json.Unmarshal(body, &response)
+		if err != nil {
+			return nil, fmt.Errorf("error unmarshalling JSON: %w", err)
+		}
+
+		allEvents = append(allEvents, response.Embedded.Events...)
+
+		if response.PageInfo.Number >= response.PageInfo.TotalPages-1 {
+			break
+		}
+
+		page++
 	}
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("Error with api call %w", err)
-	}
-	defer resp.Body.Close()
-
-	// read response
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Errorf("Error reading response body %w", err)
-	}
-	fmt.Printf("Response body: %s", body)
-	err = ioutil.WriteFile("./tmp.json", body, 0644)
-	var response EventsResponse
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling JSON: %w", err)
-	}
-
-	err = ioutil.WriteFile("./response.json", body, 0644)
-	if err != nil {
-		return nil, fmt.Errorf("Error writing to file %w", err)
-	}
-	return response.Embedded.Events, nil
+	return allEvents, nil
 }

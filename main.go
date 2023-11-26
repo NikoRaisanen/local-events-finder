@@ -7,6 +7,10 @@ package main
 // 3. Implement pagination in GetEvents func... Can I get the num of pages up front and then create a goroutine for each page?
 // 4. Long term - Set up db to store events
 // 5. Set up project structure according to golang standards
+
+// MVP:
+// 1. Get Reno events for next week
+// 2. Tweet out events for next week
 import (
 	"encoding/json"
 	"fmt"
@@ -43,10 +47,36 @@ func getSecrets() (Secret, error) {
 	return ticketMasterSecret, nil
 }
 
-func summarizeEvents(events []utils.Event) {
-	for _, event := range events {
-		fmt.Println(event.Name)
+func summarizeEvents(dailyEvents map[string][]utils.Event) {
+	for date, events := range dailyEvents {
+		fmt.Printf("Events for %s", date)
+		for _, event := range events {
+			fmt.Printf("\n\t%s", event.Name)
+		}
+		fmt.Println()
 	}
+}
+
+func aggregateDuplicates(events []utils.Event) (map[string][]utils.Event, error) {
+	dailyEvents := make(map[string][]utils.Event)
+	for _, event := range events {
+		parsedTime, err := time.Parse(time.RFC3339, event.Dates.Start.DateTime)
+		if err != nil {
+			return nil, fmt.Errorf("Error parsing time %w", err)
+		}
+		loc, err := time.LoadLocation("America/Los_Angeles")
+		if err != nil {
+			return nil, fmt.Errorf("Error loading location %w", err)
+		}
+		localTime := parsedTime.In(loc)
+		truncatedTime := localTime.Format("2006-01-02")
+		if _, ok := dailyEvents[truncatedTime]; ok {
+			dailyEvents[truncatedTime] = append(dailyEvents[truncatedTime], event)
+		} else {
+			dailyEvents[truncatedTime] = []utils.Event{event}
+		}
+	}
+	return dailyEvents, nil
 }
 
 func main() {
@@ -56,10 +86,9 @@ func main() {
 	}
 
 	timeNow := time.Now().Format("2006-01-02T15:04:05Z")
-	endTime := time.Now().AddDate(0, 2, 0).Format("2006-01-02T15:04:05Z")
+	endTime := time.Now().AddDate(0, 0, 7).Format("2006-01-02T15:04:05Z")
 	postalCode := "89501"
 	resp, err := utils.GetEvents(ticketMasterSecret.Key, postalCode, timeNow, endTime)
-	// fmt.Printf("Response from GetEvents: %v", resp)
-	fmt.Printf("Number of events: %d", len(resp))
-	summarizeEvents(resp)
+	condensedEvents, err := aggregateDuplicates(resp)
+	summarizeEvents(condensedEvents)
 }
