@@ -21,16 +21,20 @@ import (
 	"time"
 )
 
-type Secret struct {
+type Secrets struct {
+	Integrations map[string]IntegrationSecret `json:"integrations"`
+}
+
+type IntegrationSecret struct {
 	Key    string `json:"key"`
 	Secret string `json:"secret"`
 }
 
-func getSecrets() (Secret, error) {
+func getSecrets() (Secrets, error) {
 	// open file
 	file, err := os.Open("./secrets.json")
 	if err != nil {
-		return Secret{}, fmt.Errorf("Error reading secrets file %w", err)
+		return Secrets{}, fmt.Errorf("Error reading secrets file %w", err)
 	}
 	defer file.Close()
 	// read file data
@@ -38,13 +42,13 @@ func getSecrets() (Secret, error) {
 	bytes, err := io.ReadAll(file)
 	// unmarshall json
 
-	var ticketMasterSecret Secret
-	err = json.Unmarshal(bytes, &ticketMasterSecret)
+	var allSecrets Secrets
+	err = json.Unmarshal(bytes, &allSecrets)
 	if err != nil {
-		return ticketMasterSecret, fmt.Errorf("Error unmarshalling json into struct %w", err)
+		return allSecrets, fmt.Errorf("Error unmarshalling json into struct %w", err)
 	}
 
-	return ticketMasterSecret, nil
+	return allSecrets, nil
 }
 
 func summarizeEvents(dailyEvents map[string][]utils.Event) {
@@ -80,7 +84,7 @@ func aggregateDuplicates(events []utils.Event) (map[string][]utils.Event, error)
 }
 
 func main() {
-	ticketMasterSecret, err := getSecrets()
+	secretStore, err := getSecrets()
 	if err != nil {
 		log.Fatalf("Error occured fetching secrets %s", err)
 	}
@@ -88,7 +92,7 @@ func main() {
 	timeNow := time.Now().Format("2006-01-02T15:04:05Z")
 	endTime := time.Now().AddDate(0, 0, 7).Format("2006-01-02T15:04:05Z")
 	postalCode := "89501"
-	resp, err := utils.GetEvents(ticketMasterSecret.Key, postalCode, timeNow, endTime)
+	resp, err := utils.GetEvents(secretStore.Integrations["ticketmaster"].Key, postalCode, timeNow, endTime)
 	condensedEvents, err := aggregateDuplicates(resp)
 	summarizeEvents(condensedEvents)
 }
