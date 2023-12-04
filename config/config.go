@@ -1,22 +1,25 @@
 package config
 
 type Secrets struct {
-	Integrations map[string]IntegrationSecret `json:"integrations"`
+	Integrations Integration `json:"integrations"`
 }
 
-type IntegrationSecret struct {
+type Integration struct {
+	TickerMaster    APIKeySecret              `json:"ticketmaster"`
+	Twitter         APIKeySecret              `json:"twitter"`
+	TwitterAccounts map[string]TwitterAccount `json:"twitterAccounts"`
+	Oauth2          Oauth2                    `json:"oauth2"`
+}
+
+type APIKeySecret struct {
 	Key    string `json:"key"`
 	Secret string `json:"secret"`
 }
 
-type TickerMaster struct {
-	Key    string `json:"key"`
-	Secret string `json:"secret"`
-}
-
-type Twitter struct {
-	Key    string `json:"key"`
-	Secret string `json:"secret"`
+type TwitterAccount struct {
+	BearerToken       string `json:"bearerToken"`
+	AccessToken       string `json:"accessToken"`
+	AccessTokenSecret string `json:"accessTokenSecret"`
 }
 
 type Oauth2 struct {

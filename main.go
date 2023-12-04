@@ -15,26 +15,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"localevents/config"
 	"localevents/utils"
-	"log"
 	"os"
 	"time"
 )
 
-type Secrets struct {
-	Integrations map[string]IntegrationSecret `json:"integrations"`
-}
+// type Secrets struct {
+// 	Integrations map[string]IntegrationSecret `json:"integrations"`
+// }
 
-type IntegrationSecret struct {
-	Key    string `json:"key"`
-	Secret string `json:"secret"`
-}
+// type IntegrationSecret struct {
+// 	Key    string `json:"key"`
+// 	Secret string `json:"secret"`
+// }
 
-func getSecrets() (Secrets, error) {
+func getSecrets() (config.Secrets, error) {
 	// open file
 	file, err := os.Open("./secrets.json")
 	if err != nil {
-		return Secrets{}, fmt.Errorf("Error reading secrets file %w", err)
+		return config.Secrets{}, fmt.Errorf("Error reading secrets file %w", err)
 	}
 	defer file.Close()
 	// read file data
@@ -42,7 +42,7 @@ func getSecrets() (Secrets, error) {
 	bytes, err := io.ReadAll(file)
 	// unmarshall json
 
-	var allSecrets Secrets
+	var allSecrets config.Secrets
 	err = json.Unmarshal(bytes, &allSecrets)
 	if err != nil {
 		return allSecrets, fmt.Errorf("Error unmarshalling json into struct %w", err)
@@ -86,13 +86,17 @@ func aggregateDuplicates(events []utils.Event) (map[string][]utils.Event, error)
 func main() {
 	secretStore, err := getSecrets()
 	if err != nil {
-		log.Fatalf("Error occured fetching secrets %s", err)
+		fmt.Errorf("Error occured fetching secrets %s", err)
 	}
+	utils.CallApi(secretStore)
 
-	timeNow := time.Now().Format("2006-01-02T15:04:05Z")
-	endTime := time.Now().AddDate(0, 0, 7).Format("2006-01-02T15:04:05Z")
-	postalCode := "89501"
-	resp, err := utils.GetEvents(secretStore.Integrations["ticketmaster"].Key, postalCode, timeNow, endTime)
-	condensedEvents, err := aggregateDuplicates(resp)
-	summarizeEvents(condensedEvents)
+	// utils.GetAccessToken("")
+	// utils.CreateTweet("")
+
+	// timeNow := time.Now().Format("2006-01-02T15:04:05Z")
+	// endTime := time.Now().AddDate(0, 0, 7).Format("2006-01-02T15:04:05Z")
+	// postalCode := "89501"
+	// resp, err := utils.GetEvents(secretStore.Integrations["ticketmaster"].Key, postalCode, timeNow, endTime)
+	// condensedEvents, err := aggregateDuplicates(resp)
+	// summarizeEvents(condensedEvents)
 }
