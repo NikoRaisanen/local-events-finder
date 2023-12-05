@@ -13,6 +13,7 @@ package main
 // 2. Tweet out events for next week
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"localevents/config"
@@ -84,11 +85,31 @@ func aggregateDuplicates(events []utils.Event) (map[string][]utils.Event, error)
 }
 
 func main() {
+	// use command line args for testing purposes
+	var twitterToken string
+	flag.StringVar(&twitterToken, "t", "", "Twitter bearer token")
+	flag.Parse()
 	secretStore, err := getSecrets()
 	if err != nil {
 		fmt.Errorf("Error occured fetching secrets %s", err)
 	}
-	utils.CallApi(secretStore)
+
+	if twitterToken == "" {
+		// go through oauth workflow
+		twitterToken, err := utils.FetchNewTwitterToken(secretStore)
+		if err != nil {
+			fmt.Errorf("Error fetching new twitter token %s", err)
+		}
+		utils.CreateTweet(twitterToken)
+	} else {
+		// use token provided for twitter auth
+		utils.CreateTweet(twitterToken)
+	}
+	// secretStore, err := getSecrets()
+	// if err != nil {
+	// 	fmt.Errorf("Error occured fetching secrets %s", err)
+	// }
+	// utils.FetchNewTwitterToken(secretStore)
 
 	// utils.GetAccessToken("")
 	// utils.CreateTweet("")

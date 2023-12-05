@@ -30,7 +30,7 @@ type AccessTokenBody struct {
 	CodeVerifier string `json:"code_verifier"`
 }
 
-func getCode(clientId string) (string, error) {
+func GetCode(clientId string) (string, error) {
 	// TODO: parameterize the url
 	redirectUri := "https://nikoraisanen.com"
 	url := "https://twitter.com/i/oauth2/authorize?response_type=code&client_id=" + clientId + "&redirect_uri=" + redirectUri + "&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=state&code_challenge=challenge&code_challenge_method=plain"
@@ -113,15 +113,11 @@ func GetAccessToken(code string, secretStore config.Secrets) (string, error) {
 	return "", nil
 }
 
-func CallApi(secretStore config.Secrets) error {
-	oauthCode, err := getCode(secretStore.Integrations.Oauth2.ClientId)
+func FetchNewTwitterToken(secretStore config.Secrets) (string, error) {
+	oauthCode, err := GetCode(secretStore.Integrations.Oauth2.ClientId)
 	if err != nil {
-		return fmt.Errorf("error getting access token: %w", err)
+		return "", fmt.Errorf("error getting link for oauth code: %w", err)
 	}
 	accessToken, _ := GetAccessToken(oauthCode, secretStore)
-	err = CreateTweet(accessToken)
-	if err != nil {
-		return fmt.Errorf("error creating tweet: %w", err)
-	}
-	return nil
+	return accessToken, err
 }
