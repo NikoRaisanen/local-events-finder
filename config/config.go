@@ -1,5 +1,12 @@
 package config
 
+import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+)
+
 type Secrets struct {
 	Integrations Integration `json:"integrations"`
 }
@@ -25,4 +32,25 @@ type TwitterAccount struct {
 type Oauth2 struct {
 	ClientId     string `json:"clientId"`
 	ClientSecret string `json:"clientSecret"`
+}
+
+func GetSecrets() (Secrets, error) {
+	// open file
+	file, err := os.Open("./secrets.json")
+	if err != nil {
+		return Secrets{}, fmt.Errorf("Error reading secrets file %w", err)
+	}
+	defer file.Close()
+	// read file data
+
+	bytes, err := io.ReadAll(file)
+	// unmarshall json
+
+	var allSecrets Secrets
+	err = json.Unmarshal(bytes, &allSecrets)
+	if err != nil {
+		return allSecrets, fmt.Errorf("Error unmarshalling json into struct %w", err)
+	}
+
+	return allSecrets, nil
 }

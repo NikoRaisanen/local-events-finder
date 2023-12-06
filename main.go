@@ -12,13 +12,12 @@ package main
 // 1. Get Reno events for next week
 // 2. Tweet out events for next week
 import (
-	"encoding/json"
-	"flag"
+
+	// "flag"
 	"fmt"
-	"io"
-	"localevents/config"
 	"localevents/utils"
-	"os"
+	"log"
+	"net/http"
 	"time"
 )
 
@@ -31,26 +30,26 @@ import (
 // 	Secret string `json:"secret"`
 // }
 
-func getSecrets() (config.Secrets, error) {
-	// open file
-	file, err := os.Open("./secrets.json")
-	if err != nil {
-		return config.Secrets{}, fmt.Errorf("Error reading secrets file %w", err)
-	}
-	defer file.Close()
-	// read file data
+// func getSecrets() (config.Secrets, error) {
+// 	// open file
+// 	file, err := os.Open("./secrets.json")
+// 	if err != nil {
+// 		return config.Secrets{}, fmt.Errorf("Error reading secrets file %w", err)
+// 	}
+// 	defer file.Close()
+// 	// read file data
 
-	bytes, err := io.ReadAll(file)
-	// unmarshall json
+// 	bytes, err := io.ReadAll(file)
+// 	// unmarshall json
 
-	var allSecrets config.Secrets
-	err = json.Unmarshal(bytes, &allSecrets)
-	if err != nil {
-		return allSecrets, fmt.Errorf("Error unmarshalling json into struct %w", err)
-	}
+// 	var allSecrets config.Secrets
+// 	err = json.Unmarshal(bytes, &allSecrets)
+// 	if err != nil {
+// 		return allSecrets, fmt.Errorf("Error unmarshalling json into struct %w", err)
+// 	}
 
-	return allSecrets, nil
-}
+// 	return allSecrets, nil
+// }
 
 func summarizeEvents(dailyEvents map[string][]utils.Event) {
 	for date, events := range dailyEvents {
@@ -85,26 +84,29 @@ func aggregateDuplicates(events []utils.Event) (map[string][]utils.Event, error)
 }
 
 func main() {
-	// use command line args for testing purposes
-	var twitterToken string
-	flag.StringVar(&twitterToken, "t", "", "Twitter bearer token")
-	flag.Parse()
-	secretStore, err := getSecrets()
-	if err != nil {
-		fmt.Errorf("Error occured fetching secrets %s", err)
-	}
+	http.HandleFunc("/start_oauth", utils.StartOauth)
+	// http.HandleFunc("/oauth_callback", utils.CallbackHandler)
+	// Start the HTTP server
+	log.Println("Starting server on http://localhost:8080")
+	http.ListenAndServe(":8080", nil)
 
-	if twitterToken == "" {
-		// go through oauth workflow
-		twitterToken, err := utils.FetchNewTwitterToken(secretStore)
-		if err != nil {
-			fmt.Errorf("Error fetching new twitter token %s", err)
-		}
-		utils.CreateTweet(twitterToken)
-	} else {
-		// use token provided for twitter auth
-		utils.CreateTweet(twitterToken)
-	}
+	// use command line args for testing purposes
+	// var twitterToken string
+	// flag.StringVar(&twitterToken, "t", "", "Twitter bearer token")
+	// flag.Parse()
+
+	// if twitterToken == "" {
+	// 	// go through oauth workflow
+	// 	twitterToken, err := utils.FetchNewTwitterToken(secretStore)
+	// 	if err != nil {
+	// 		fmt.Errorf("Error fetching new twitter token %s", err)
+	// 	}
+	// 	utils.CreateTweet(twitterToken)
+	// } else {
+	// 	// use token provided for twitter auth
+	// 	utils.CreateTweet(twitterToken)
+	// }
+
 	// secretStore, err := getSecrets()
 	// if err != nil {
 	// 	fmt.Errorf("Error occured fetching secrets %s", err)

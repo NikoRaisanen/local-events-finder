@@ -30,24 +30,14 @@ type AccessTokenBody struct {
 	CodeVerifier string `json:"code_verifier"`
 }
 
-func GetCode(clientId string) (string, error) {
+func GetAuthUrl(clientId string) (string, error) {
 	// TODO: parameterize the url
-	redirectUri := "https://nikoraisanen.com"
+	redirectUri := "http://localhost:8080/oauth_callback"
+	// redirectUri := "https://nikoraisanen.com"
 	url := "https://twitter.com/i/oauth2/authorize?response_type=code&client_id=" + clientId + "&redirect_uri=" + redirectUri + "&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=state&code_challenge=challenge&code_challenge_method=plain"
 	fmt.Printf("auth url: %s\n", url)
 
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return "", fmt.Errorf("error creating new request object: %w", err)
-	}
-	client := &http.Client{}
-	res, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("error sending request: %w", err)
-	}
-	defer res.Body.Close()
-	fmt.Printf("response url after outh: %s\n", res.Request.URL.String())
-	return "", nil
+	return url, nil
 }
 
 func CreateTweet(accessToken string) error {
@@ -114,7 +104,7 @@ func GetAccessToken(code string, secretStore config.Secrets) (string, error) {
 }
 
 func FetchNewTwitterToken(secretStore config.Secrets) (string, error) {
-	oauthCode, err := GetCode(secretStore.Integrations.Oauth2.ClientId)
+	oauthCode, err := GetAuthUrl(secretStore.Integrations.Oauth2.ClientId)
 	if err != nil {
 		return "", fmt.Errorf("error getting link for oauth code: %w", err)
 	}
