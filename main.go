@@ -85,7 +85,7 @@ func aggregateDuplicates(events []utils.Event) (map[string][]utils.Event, error)
 
 func main() {
 	http.HandleFunc("/start_oauth", utils.StartOauth)
-	// http.HandleFunc("/oauth_callback", utils.CallbackHandler)
+	http.HandleFunc("/oauth_callback", utils.CallbackHandler)
 	// Start the HTTP server
 	log.Println("Starting server on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)

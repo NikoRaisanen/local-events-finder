@@ -69,9 +69,9 @@ func getAccessToken(code string, secretStore config.Secrets) (string, error) {
 
 func getAuthUrl(clientId string) (string, error) {
 	// TODO: parameterize the url
-	// redirectUri := "http://localhost:8080/oauth_callback"
+	redirectUri := "http://localhost:8080/oauth_callback"
 	// Change twitter settings to allow redirect to localhost
-	redirectUri := "https://nikoraisanen.com"
+	// redirectUri := "https://nikoraisanen.com"
 	url := "https://twitter.com/i/oauth2/authorize?response_type=code&client_id=" + clientId + "&redirect_uri=" + redirectUri + "&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=state&code_challenge=challenge&code_challenge_method=plain"
 
 	return url, nil
