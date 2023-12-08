@@ -23,10 +23,14 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Here you should exchange the code for an access token
-	// This part is not implemented in this snippet
-	fmt.Println("authorization code: ", code)
-	GetAccessToken(code, secretStore)
+	accessToken, err := getAccessToken(code, secretStore)
+	if err != nil {
+		fmt.Errorf("error getting access token: %w", err)
+	}
+}
+
+func saveAccessToken(accessToken string) error {
+
 }
 
 func getAccessToken(code string, secretStore config.Secrets) (string, error) {
@@ -37,7 +41,7 @@ func getAccessToken(code string, secretStore config.Secrets) (string, error) {
 	data.Set("code", code)
 	data.Set("grant_type", "authorization_code")
 	data.Set("client_id", secretStore.Integrations.Oauth2.ClientId)
-	data.Set("redirect_uri", "https://nikoraisanen.com")
+	data.Set("redirect_uri", "http://localhost:8080/oauth_callback")
 	data.Set("code_verifier", "challenge")
 
 	req, err := http.NewRequest(method, apiUrl, strings.NewReader(data.Encode()))
@@ -50,7 +54,6 @@ func getAccessToken(code string, secretStore config.Secrets) (string, error) {
 	// clientid:clientsecret base64 encoded
 	bAuth := []byte(secretStore.Integrations.Oauth2.ClientId + ":" + secretStore.Integrations.Oauth2.ClientSecret)
 	encoded := base64.StdEncoding.EncodeToString(bAuth)
-	fmt.Printf("encoded: %s\n", encoded)
 	req.Header.Set("Authorization", "Basic "+encoded)
 
 	client := &http.Client{}
