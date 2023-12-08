@@ -24,9 +24,10 @@ type APIKeySecret struct {
 }
 
 type TwitterAccount struct {
-	BearerToken       string `json:"bearerToken"`
-	AccessToken       string `json:"accessToken"`
-	AccessTokenSecret string `json:"accessTokenSecret"`
+	BearerToken       string  `json:"bearerToken"`
+	AccessToken       string  `json:"accessToken"`
+	AccessTokenSecret string  `json:"accessTokenSecret"`
+	RefreshToken      *string `json:"refreshToken"`
 }
 
 type Oauth2 struct {
@@ -55,15 +56,17 @@ func GetSecrets() (Secrets, error) {
 	return allSecrets, nil
 }
 
-func UpdateTwitterBearer(twitterAccount string, bearer string) error {
+func UpdateTwitterCreds(twitterAccount string, bearer string, refresh string) error {
+	fmt.Printf("New bearer token: %s\n", bearer)
+	fmt.Printf("New refresh token: %s\n", refresh)
 	secretStore, _ := GetSecrets()
-	fmt.Printf("secrets: %v\n", secretStore)
 
 	account, ok := secretStore.Integrations.TwitterAccounts[twitterAccount]
 	if !ok {
 		return fmt.Errorf("Error finding %s in secrets.json", twitterAccount)
 	}
 	account.BearerToken = bearer
+	account.RefreshToken = &refresh
 
 	secretStore.Integrations.TwitterAccounts[twitterAccount] = account
 
@@ -80,5 +83,4 @@ func UpdateTwitterBearer(twitterAccount string, bearer string) error {
 	}
 
 	return nil
-
 }

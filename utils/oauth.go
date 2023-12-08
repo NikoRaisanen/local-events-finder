@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"localevents/config"
@@ -9,6 +10,11 @@ import (
 	"net/url"
 	"strings"
 )
+
+type AccessTokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+}
 
 func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	secretStore, err := config.GetSecrets()
@@ -23,23 +29,23 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	accessToken, err := getAccessToken(code, secretStore)
+	tokens, err := getAccessToken(code, secretStore)
 	if err != nil {
 		fmt.Errorf("error getting access token: %w", err)
 	}
 	// hardcode twitter user for now
-	saveAccessToken("RenoLocalEvents", accessToken)
+	saveAccessToken("RenoLocalEvents", tokens)
 }
 
-func saveAccessToken(accout string, accessToken string) error {
-	err := config.UpdateTwitterBearer(accout, accessToken)
+func saveAccessToken(accout string, tokens AccessTokenResponse) error {
+	err := config.UpdateTwitterCreds(accout, tokens.AccessToken, tokens.RefreshToken)
 	if err != nil {
 		return fmt.Errorf("error updating twitter bearer: %w", err)
 	}
 	return nil
 }
 
-func getAccessToken(code string, secretStore config.Secrets) (string, error) {
+func getAccessToken(code string, secretStore config.Secrets) (AccessTokenResponse, error) {
 	apiUrl := "https://api.twitter.com/2/oauth2/token"
 	method := "POST"
 
@@ -52,7 +58,7 @@ func getAccessToken(code string, secretStore config.Secrets) (string, error) {
 
 	req, err := http.NewRequest(method, apiUrl, strings.NewReader(data.Encode()))
 	if err != nil {
-		return "", fmt.Errorf("error creating new request: %w", err)
+		return AccessTokenResponse{}, fmt.Errorf("error creating new request: %w", err)
 	}
 
 	// Set the Content-Type header
@@ -65,15 +71,18 @@ func getAccessToken(code string, secretStore config.Secrets) (string, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("error sending request: %w", err)
+		return AccessTokenResponse{}, fmt.Errorf("error sending request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	respBody, err := io.ReadAll(resp.Body)
-	bodyString := string(respBody)
-	fmt.Printf("response body: %s\n", bodyString)
+	var response AccessTokenResponse
+	err = json.Unmarshal(respBody, &response)
+	if err != nil {
+		return AccessTokenResponse{}, fmt.Errorf("error unmarshalling access token response: %w", err)
+	}
 
-	return "", nil
+	return response, nil
 }
 
 func getAuthUrl(clientId string) (string, error) {

@@ -84,6 +84,10 @@ func aggregateDuplicates(events []utils.Event) (map[string][]utils.Event, error)
 }
 
 func main() {
+	// Code paths:
+	// Provided username has refresh token -> use it
+	// No refresh token -> go through oauth workflow -> store refresh token
+	// Do normal work
 	http.HandleFunc("/start_oauth", utils.StartOauth)
 	http.HandleFunc("/oauth_callback", utils.CallbackHandler)
 	// Start the HTTP server
