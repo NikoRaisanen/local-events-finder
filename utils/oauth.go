@@ -27,10 +27,16 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Errorf("error getting access token: %w", err)
 	}
+	// hardcode twitter user for now
+	saveAccessToken("RenoLocalEvents", accessToken)
 }
 
-func saveAccessToken(accessToken string) error {
-
+func saveAccessToken(accout string, accessToken string) error {
+	err := config.UpdateTwitterBearer(accout, accessToken)
+	if err != nil {
+		return fmt.Errorf("error updating twitter bearer: %w", err)
+	}
+	return nil
 }
 
 func getAccessToken(code string, secretStore config.Secrets) (string, error) {
@@ -71,10 +77,7 @@ func getAccessToken(code string, secretStore config.Secrets) (string, error) {
 }
 
 func getAuthUrl(clientId string) (string, error) {
-	// TODO: parameterize the url
 	redirectUri := "http://localhost:8080/oauth_callback"
-	// Change twitter settings to allow redirect to localhost
-	// redirectUri := "https://nikoraisanen.com"
 	url := "https://twitter.com/i/oauth2/authorize?response_type=code&client_id=" + clientId + "&redirect_uri=" + redirectUri + "&scope=tweet.read%20tweet.write%20users.read%20follows.read%20offline.access&state=state&code_challenge=challenge&code_challenge_method=plain"
 
 	return url, nil

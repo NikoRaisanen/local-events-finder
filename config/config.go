@@ -54,3 +54,31 @@ func GetSecrets() (Secrets, error) {
 
 	return allSecrets, nil
 }
+
+func UpdateTwitterBearer(twitterAccount string, bearer string) error {
+	secretStore, _ := GetSecrets()
+	fmt.Printf("secrets: %v\n", secretStore)
+
+	account, ok := secretStore.Integrations.TwitterAccounts[twitterAccount]
+	if !ok {
+		return fmt.Errorf("Error finding %s in secrets.json", twitterAccount)
+	}
+	account.BearerToken = bearer
+
+	secretStore.Integrations.TwitterAccounts[twitterAccount] = account
+
+	// Marshal the updated secrets back to JSON
+	updatedBytes, err := json.Marshal(secretStore)
+	if err != nil {
+		return fmt.Errorf("Error marshalling updated secrets: %w", err)
+	}
+
+	// Write the updated JSON back to the file
+	err = os.WriteFile("./secrets.json", updatedBytes, 0644)
+	if err != nil {
+		return fmt.Errorf("Error writing updated secrets to file: %w", err)
+	}
+
+	return nil
+
+}
