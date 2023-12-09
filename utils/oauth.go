@@ -45,6 +45,7 @@ func saveAccessToken(accout string, tokens AccessTokenResponse) error {
 	return nil
 }
 
+// TODO: generalize this function so it handles first time oauth and refresh token
 func getAccessToken(code string, secretStore config.Secrets) (AccessTokenResponse, error) {
 	apiUrl := "https://api.twitter.com/2/oauth2/token"
 	method := "POST"
@@ -83,6 +84,42 @@ func getAccessToken(code string, secretStore config.Secrets) (AccessTokenRespons
 	}
 
 	return response, nil
+}
+
+func refreshAccessToken(secretStore config.Secrets, refreshToken string) (string, error) {
+
+	apiUrl := "https://api.twitter.com/2/oauth2/token"
+	method := "POST"
+
+	data := url.Values{}
+	data.Set("grant_type", "refresh_token")
+	data.Set("refresh_token", refreshToken)
+
+	req, err := http.NewRequest(method, apiUrl, strings.NewReader(data.Encode()))
+	if err != nil {
+		return "", fmt.Errorf("error creating new request: %w", err)
+	}
+
+	// Set the Content-Type header
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	// clientid:clientsecret base64 encoded
+	bAuth := []byte(secretStore.Integrations.Oauth2.ClientId + ":" + secretStore.Integrations.Oauth2.ClientSecret)
+	encoded := base64.StdEncoding.EncodeToString(bAuth)
+	req.Header.Set("Authorization", "Basic "+encoded)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("error sending request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, err := io.ReadAll(resp.Body)
+	var response AccessTokenResponse
+	err = json.Unmarshal(respBody, &response)
+	if err != nil {
+		return AccessTokenResponse{}, fmt.Errorf("error unmarshalling access token response: %w", err)
+	}
 }
 
 func getAuthUrl(clientId string) (string, error) {

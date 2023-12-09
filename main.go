@@ -15,41 +15,12 @@ import (
 
 	// "flag"
 	"fmt"
+	"localevents/config"
 	"localevents/utils"
 	"log"
 	"net/http"
 	"time"
 )
-
-// type Secrets struct {
-// 	Integrations map[string]IntegrationSecret `json:"integrations"`
-// }
-
-// type IntegrationSecret struct {
-// 	Key    string `json:"key"`
-// 	Secret string `json:"secret"`
-// }
-
-// func getSecrets() (config.Secrets, error) {
-// 	// open file
-// 	file, err := os.Open("./secrets.json")
-// 	if err != nil {
-// 		return config.Secrets{}, fmt.Errorf("Error reading secrets file %w", err)
-// 	}
-// 	defer file.Close()
-// 	// read file data
-
-// 	bytes, err := io.ReadAll(file)
-// 	// unmarshall json
-
-// 	var allSecrets config.Secrets
-// 	err = json.Unmarshal(bytes, &allSecrets)
-// 	if err != nil {
-// 		return allSecrets, fmt.Errorf("Error unmarshalling json into struct %w", err)
-// 	}
-
-// 	return allSecrets, nil
-// }
 
 func summarizeEvents(dailyEvents map[string][]utils.Event) {
 	for date, events := range dailyEvents {
@@ -83,29 +54,29 @@ func aggregateDuplicates(events []utils.Event) (map[string][]utils.Event, error)
 	return dailyEvents, nil
 }
 
-func main() {
-	// Code paths:
-	// Provided username has refresh token -> use it
-	// No refresh token -> go through oauth workflow -> store refresh token
-	// Do normal work
+func twitterAuth() {
 	http.HandleFunc("/start_oauth", utils.StartOauth)
 	http.HandleFunc("/oauth_callback", utils.CallbackHandler)
 	// Start the HTTP server
 	log.Println("Starting server on http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
+}
 
-	// use command line args for testing purposes
-	// var twitterToken string
-	// flag.StringVar(&twitterToken, "t", "", "Twitter bearer token")
-	// flag.Parse()
+func main() {
+	// Code paths:
+	// Try to use access token -> if it fails, go through oauth workflow
 
-	// if twitterToken == "" {
-	// 	// go through oauth workflow
-	// 	twitterToken, err := utils.FetchNewTwitterToken(secretStore)
-	// 	if err != nil {
-	// 		fmt.Errorf("Error fetching new twitter token %s", err)
-	// 	}
-	// 	utils.CreateTweet(twitterToken)
+	// get refresh token
+	secretStore, err := config.GetSecrets()
+	if err != nil {
+		fmt.Errorf("Error occured fetching secrets %s", err)
+	}
+	refreshToken := secretStore.Integrations.TwitterAccounts["RenoLocalEvents"].RefreshToken
+	// exchange refresh token for access token
+
+	// // access token is written to local file
+	// if *refreshToken == "" {
+	// 	twitterAuth()
 	// } else {
 	// 	// use token provided for twitter auth
 	// 	utils.CreateTweet(twitterToken)
