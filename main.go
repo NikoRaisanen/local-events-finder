@@ -69,32 +69,18 @@ func main() {
 	// get refresh token
 	secretStore, err := config.GetSecrets()
 	if err != nil {
-		fmt.Errorf("Error occured fetching secrets %s", err)
+		log.Fatalf("Error occured fetching secrets %s", err)
 	}
-	refreshToken := secretStore.Integrations.TwitterAccounts["RenoLocalEvents"].RefreshToken
+	// refreshToken := secretStore.Integrations.TwitterAccounts["RenoLocalEvents"].RefreshToken
 	// exchange refresh token for access token
+	// twitterToken, err := utils.RefreshAccessToken(secretStore, *refreshToken)
 
-	// // access token is written to local file
-	// if *refreshToken == "" {
-	// 	twitterAuth()
-	// } else {
-	// 	// use token provided for twitter auth
-	// 	utils.CreateTweet(twitterToken)
-	// }
+	timeNow := time.Now().Format("2006-01-02T15:04:05Z")
+	endTime := time.Now().AddDate(0, 0, 7).Format("2006-01-02T15:04:05Z")
+	postalCode := "89501"
+	resp, err := utils.GetEvents(secretStore.Integrations.TickerMaster.Key, postalCode, timeNow, endTime)
+	condensedEvents, err := aggregateDuplicates(resp)
+	summarizeEvents(condensedEvents)
 
-	// secretStore, err := getSecrets()
-	// if err != nil {
-	// 	fmt.Errorf("Error occured fetching secrets %s", err)
-	// }
-	// utils.FetchNewTwitterToken(secretStore)
-
-	// utils.GetAccessToken("")
-	// utils.CreateTweet("")
-
-	// timeNow := time.Now().Format("2006-01-02T15:04:05Z")
-	// endTime := time.Now().AddDate(0, 0, 7).Format("2006-01-02T15:04:05Z")
-	// postalCode := "89501"
-	// resp, err := utils.GetEvents(secretStore.Integrations["ticketmaster"].Key, postalCode, timeNow, endTime)
-	// condensedEvents, err := aggregateDuplicates(resp)
-	// summarizeEvents(condensedEvents)
+	// utils.CreateTweet(twitterToken, "How is everyone doing?")
 }

@@ -26,10 +26,10 @@ type AccessTokenBody struct {
 	CodeVerifier string `json:"code_verifier"`
 }
 
-func CreateTweet(accessToken string) error {
+func CreateTweet(accessToken string, text string) error {
 	url := "https://api.twitter.com/2/tweets"
 	method := "POST"
-	jsonBody, err := json.Marshal(&RequestBody{Text: "Hello World!"})
+	jsonBody, err := json.Marshal(&RequestBody{Text: text})
 	if err != nil {
 		return fmt.Errorf("error marshalling json: %w", err)
 	}

@@ -45,7 +45,7 @@ func saveAccessToken(accout string, tokens AccessTokenResponse) error {
 	return nil
 }
 
-// TODO: generalize this function so it handles first time oauth and refresh token
+// TODO: modify this function to handle a user authenticating for the first time
 func getAccessToken(code string, secretStore config.Secrets) (AccessTokenResponse, error) {
 	apiUrl := "https://api.twitter.com/2/oauth2/token"
 	method := "POST"
@@ -86,7 +86,7 @@ func getAccessToken(code string, secretStore config.Secrets) (AccessTokenRespons
 	return response, nil
 }
 
-func refreshAccessToken(secretStore config.Secrets, refreshToken string) (string, error) {
+func RefreshAccessToken(secretStore config.Secrets, refreshToken string) (string, error) {
 
 	apiUrl := "https://api.twitter.com/2/oauth2/token"
 	method := "POST"
@@ -118,8 +118,16 @@ func refreshAccessToken(secretStore config.Secrets, refreshToken string) (string
 	var response AccessTokenResponse
 	err = json.Unmarshal(respBody, &response)
 	if err != nil {
-		return AccessTokenResponse{}, fmt.Errorf("error unmarshalling access token response: %w", err)
+		return "", fmt.Errorf("error unmarshalling access token response: %w", err)
 	}
+
+	err = saveAccessToken("RenoLocalEvents", response)
+	if err != nil {
+		return "", fmt.Errorf("error saving access and refresh tokens: %w", err)
+	}
+	// update access token and refresh token in secrets.json
+
+	return response.AccessToken, nil
 }
 
 func getAuthUrl(clientId string) (string, error) {
